@@ -59,9 +59,12 @@
 
 - 分析新功能需要的硬件模块、接口、引脚
 - 向用户确认关键选型（1-2 个问题）
+- **驱动代码来源判断**：
+  - 复杂模块（OLED/ESP8266/MPU6050 等）→ 请求用户提供驱动代码文件
+  - 简单模块（LED/蜂鸣器等）→ 从 stm32-master 模板生成
 - 备份 requirements.json → 追加新模块到 inputs/outputs
 - 重新生成接线图、流程图、软件设计文档
-- 编写新驱动代码，修改 main.c（不重写已有代码）
+- 使用用户提供的驱动 或 编写新驱动，修改 main.c（不重写已有代码）
 - 重编译烧录
 
 ### 硬件更换
@@ -109,12 +112,16 @@ flowchart TD
     B --> C[加载项目上下文]
     C --> D[分析需求 / 兼容性]
     D --> E[向用户确认选型]
-    E --> F[备份 requirements.json]
-    F --> G[合并需求]
-    G --> H[diagram-master 更新图表]
-    H --> I[编写/修改驱动代码]
-    I --> J[stm32-master 重编译]
-    J --> K[用户硬件验证]
+    E --> F{驱动代码来源}
+    F -->|复杂模块| G[请求用户提供驱动代码]
+    G --> G1[等待用户放置文件]
+    G1 --> H[备份 requirements.json]
+    F -->|简单模块| H
+    H --> I[合并需求]
+    I --> J[diagram-master 更新图表]
+    J --> K[使用已有驱动 或 编写新驱动]
+    K --> L[stm32-master 重编译]
+    L --> M[用户硬件验证]
 ```
 
 ---
@@ -189,12 +196,12 @@ iteration-master/
 ## 工作流位置
 
 ```
-①需求分析大师 → ②效果呈现大师 → ③代码实现大师
- 需求文档         接线图/架构图       编译/烧录/调试/监控
-                                      ↑
-                         迭代升级从这里接入
-                         (修改代码 → 重编译)
-                         (改需求 → 改图表 → 改代码 → 重编译)
+embedded-pipeline（入口 + 目录选择 + 模式判断）
+  │
+  ├─ 新建模式 → requirements-master → diagram-master → stm32-master
+  │
+  └─ 迭代模式 → iteration-master → (diagram-master) → stm32-master
+                 (当前位置)
 ```
 
 ---
@@ -207,4 +214,5 @@ iteration-master/
 | **需求** | 从零生成 | 增量合并，备份旧版本 |
 | **图表** | 从零生成 | 按需重新生成（Bug/优化不改） |
 | **代码** | 从零生成 | 精确编辑 / 增量添加 |
+| **驱动来源** | 统一生成 | 复杂模块请求用户提供，简单模块从模板生成 |
 | **调用 skill** | requirements-master → diagram-master → stm32-master | iteration-master → (diagram-master) → stm32-master |
